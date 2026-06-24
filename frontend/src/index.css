@@ -1,0 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-paper font-sans text-ink antialiased;
+    font-feature-settings: 'ss01', 'cv05';
+  }
+
+  /* Hairline rules default to the warm line color. */
+  * {
+    @apply border-line;
+  }
+
+  ::selection {
+    @apply bg-accent/20 text-ink;
+  }
+
+  /* Tabular figures for data tables and metric readouts. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* Small uppercase micro-label used above fields and in table heads. */
+  .eyebrow {
+    @apply font-mono text-[10.5px] font-medium uppercase tracking-eyebrow text-ink-faint;
+  }
+}
+
+@layer utilities {
+  /* Signature canvas: a soft, non-repeating "paper wash". Light catches the
+     top-left and fades into the base paper, with a faint clay warmth pooling
+     in the lower-right corner. Fixed so it stays steady while content scrolls. */
+  .bg-canvas {
+    background-color: #f3f0e8;
+    background-image:
+      radial-gradient(135% 90% at 12% -15%, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0) 52%),
+      radial-gradient(80% 75% at 112% 118%, rgba(176, 83, 43, 0.06), rgba(176, 83, 43, 0) 60%);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-line-strong;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+}

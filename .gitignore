@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Env / secrets
+.env
+*.local
+
+# Local databases / generated test artifacts
+*.db
+*.sqlite
+*.sqlite3
+backend/sample_resume.pdf
+
+# Runtime storage created by a local (non-Docker) backend run
+backend/storage/
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Storage (runtime artifacts)
+storage/uploads/*
+storage/processed/*
+storage/exports/*
+!storage/**/.gitkeep
+
+# OCR / model caches
+.EasyOCR/
+*.pt
+*.pth
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

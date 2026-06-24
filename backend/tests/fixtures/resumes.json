@@ -1,0 +1,26 @@
+[
+  {
+    "text": "John Doe\njohn@example.com\nSkills: Python, FastAPI, React, SQL, Docker\nExperience: Senior Engineer at Acme (2021-Present)",
+    "expected": {
+      "name": "John Doe",
+      "email": "john@example.com",
+      "skills": ["python", "fastapi", "react", "sql", "docker"]
+    }
+  },
+  {
+    "text": "Jane Smith\njane.smith@example.com\nSkills: Python and SQL\nEducation: BSc Computer Science, MIT (2017)",
+    "expected": {
+      "name": "Jane Smith",
+      "email": "jane.smith@example.com",
+      "skills": ["python", "sql"]
+    }
+  },
+  {
+    "text": "Carlos Ruiz\ncarlos@example.com\nSkills: React, Docker\nSummary: Frontend engineer.",
+    "expected": {
+      "name": "Carlos Ruiz",
+      "email": "carlos@example.com",
+      "skills": ["react", "docker"]
+    }
+  }
+]

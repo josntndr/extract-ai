@@ -1,0 +1,29 @@
+[project]
+name = "extract-ai-backend"
+version = "0.1.0"
+description = "Extract AI — AI-powered document intelligence & OCR backend"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --cov=app --cov-report=term-missing"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/workers/*", "alembic/*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "C4"]
+ignore = [
+    "B008",   # FastAPI Depends() in argument defaults is idiomatic
+    "UP042",  # `class X(str, Enum)` is intentional for SQLAlchemy/Pydantic serialization
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402", "E501"]
+"alembic/*" = ["E402", "E501"]
