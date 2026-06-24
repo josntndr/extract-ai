@@ -67,11 +67,26 @@ class Settings(BaseSettings):
     @property
     def sqlalchemy_database_uri(self) -> str:
         if self.DATABASE_URL:
-            return self.DATABASE_URL
+            return self._normalise_db_url(self.DATABASE_URL)
         return (
             f"postgresql+psycopg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
+
+    @staticmethod
+    def _normalise_db_url(url: str) -> str:
+        """Force the psycopg (v3) driver for Postgres URLs.
+
+        Managed hosts (Railway, Render, Heroku) inject `postgres://` or
+        `postgresql://`, which SQLAlchemy would route to psycopg2 (not
+        installed). Rewrite to `postgresql+psycopg://`. SQLite/other URLs pass
+        through unchanged.
+        """
+        if url.startswith("postgres://"):
+            url = "postgresql://" + url[len("postgres://") :]
+        if url.startswith("postgresql://"):
+            return "postgresql+psycopg://" + url[len("postgresql://") :]
+        return url
 
     @computed_field  # type: ignore[prop-decorator]
     @property
