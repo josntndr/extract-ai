@@ -17,16 +17,22 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
-user_role = postgresql.ENUM("user", "admin", name="user_role")
+# create_type=False: we create/drop these enums explicitly below, so
+# create_table must NOT re-emit CREATE TYPE for the same enum object
+# (that double-create raises DuplicateObject on Postgres).
+user_role = postgresql.ENUM("user", "admin", name="user_role", create_type=False)
 document_type = postgresql.ENUM(
     "invoice", "contract", "resume", "medical_form", "business_report", "unknown",
     name="document_type",
+    create_type=False,
 )
 document_status = postgresql.ENUM(
-    "uploaded", "processing", "completed", "failed", name="document_status"
+    "uploaded", "processing", "completed", "failed", name="document_status",
+    create_type=False,
 )
 document_source = postgresql.ENUM(
-    "native_pdf", "scanned_ocr", "image_ocr", "unknown", name="document_source"
+    "native_pdf", "scanned_ocr", "image_ocr", "unknown", name="document_source",
+    create_type=False,
 )
 
 
