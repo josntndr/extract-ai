@@ -84,6 +84,35 @@ def test_pipeline_native_pdf_resume(client, auth_headers, db_session):
     assert "python" in detail["extraction"]["data"]["skills"]
 
 
+def test_pipeline_completes_for_type_without_schema(client, auth_headers, db_session):
+    """A type with no structured schema (e.g. contract) still completes with
+    extracted text — it must NOT fail the whole document."""
+    from app.services.document_pipeline import process_document
+
+    contract_text = (
+        "Master Services Agreement\n"
+        "This Agreement is entered into between Acme Corp and Globex Inc.\n"
+        "Term: 12 months. Governing law: Delaware. Total fees: $50,000.\n"
+        "Either party may terminate with 30 days written notice."
+    )
+    files = {"file": ("contract.pdf", io.BytesIO(_make_native_pdf(contract_text)), "application/pdf")}
+    r = client.post(
+        "/api/v1/documents",
+        files=files,
+        data={"doc_type": "contract", "process_now": "false"},
+        headers=auth_headers,
+    )
+    doc_id = r.json()["id"]
+
+    document = db_session.get(Document, __import__("uuid").UUID(doc_id))
+    process_document(db_session, document)
+
+    detail = client.get(f"/api/v1/documents/{doc_id}", headers=auth_headers).json()
+    assert detail["status"] == DocumentStatus.COMPLETED.value
+    assert "Master Services Agreement" in (detail["extracted_text"] or "")
+    assert detail["extraction"] is None  # no schema → no structured fields, but no failure
+
+
 def test_cannot_access_other_users_document(client, auth_headers, db_session):
     files = {"file": ("resume.pdf", io.BytesIO(_make_native_pdf()), "application/pdf")}
     r = client.post(

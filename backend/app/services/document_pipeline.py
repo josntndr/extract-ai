@@ -11,8 +11,9 @@ import time
 from sqlalchemy.orm import Session
 
 from app.core.logging import get_logger
-from app.database.models.document import Document, DocumentStatus, DocumentType
+from app.database.models.document import Document, DocumentStatus
 from app.database.models.extraction import Extraction
+from app.schemas.extraction import EXTRACTION_SCHEMAS
 from app.services.extraction_service import extract_structured
 from app.services.storage import get_storage
 from app.services.text_extractor import extract_text
@@ -40,8 +41,11 @@ def process_document(db: Session, document: Document) -> Document:
         if not extraction_out.text.strip():
             raise ValueError("No text could be extracted from the document")
 
-        # 2. LLM structured extraction (only for types we have a schema for).
-        if document.doc_type != DocumentType.UNKNOWN:
+        # 2. LLM structured extraction — only for types with a registered
+        # schema (resume, invoice). Other types (contract / medical / report /
+        # unknown) still complete successfully with extracted text + tables;
+        # they just have no structured fields yet.
+        if document.doc_type in EXTRACTION_SCHEMAS:
             llm = extract_structured(extraction_out.text, document.doc_type)
             extraction = document.extraction or Extraction(document_id=document.id)
             extraction.data = llm.data
