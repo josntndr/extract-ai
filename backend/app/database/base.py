@@ -12,6 +12,17 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 JSONType = JSONB().with_variant(JSON(), "sqlite")
 
 
+def enum_values(enum_cls: type) -> list[str]:
+    """values_callable for SQLAlchemy Enum columns.
+
+    Stores the enum member's *value* (e.g. "user") rather than its NAME
+    ("USER"). This matches the lowercase labels our Alembic migrations create
+    for the Postgres enum types — without it, SQLAlchemy sends "USER" and
+    Postgres rejects it as an invalid enum value.
+    """
+    return [member.value for member in enum_cls]
+
+
 class Base(DeclarativeBase):
     pass
 

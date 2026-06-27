@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import BigInteger, Enum, Float, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.base import Base, JSONType, TimestampMixin, UUIDMixin
+from app.database.base import Base, JSONType, TimestampMixin, UUIDMixin, enum_values
 
 if TYPE_CHECKING:
     from app.database.models.extraction import Extraction
@@ -51,16 +51,18 @@ class Document(UUIDMixin, TimestampMixin, Base):
     storage_key: Mapped[str] = mapped_column(String(1024), nullable=False)
 
     doc_type: Mapped[DocumentType] = mapped_column(
-        Enum(DocumentType, name="document_type"), default=DocumentType.UNKNOWN, nullable=False
+        Enum(DocumentType, name="document_type", values_callable=enum_values),
+        default=DocumentType.UNKNOWN,
+        nullable=False,
     )
     status: Mapped[DocumentStatus] = mapped_column(
-        Enum(DocumentStatus, name="document_status"),
+        Enum(DocumentStatus, name="document_status", values_callable=enum_values),
         default=DocumentStatus.UPLOADED,
         nullable=False,
         index=True,
     )
     source: Mapped[DocumentSource] = mapped_column(
-        Enum(DocumentSource, name="document_source"),
+        Enum(DocumentSource, name="document_source", values_callable=enum_values),
         default=DocumentSource.UNKNOWN,
         nullable=False,
     )
