@@ -18,6 +18,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.core.config import settings
 from app.core.logging import get_logger
 from app.database.models.document import Document, DocumentStatus, DocumentType
 from app.database.models.user import User
@@ -54,8 +55,31 @@ def _run_pipeline(document_id: uuid.UUID) -> None:
         db.close()
 
 
+async def _read_capped(file: UploadFile) -> bytes:
+    """Read an upload in chunks, aborting once it exceeds the configured cap.
+
+    Prevents memory exhaustion: we never buffer more than max_upload_bytes,
+    so an oversized (or unbounded) body is rejected instead of being read
+    fully into RAM first.
+    """
+    limit = settings.max_upload_bytes
+    total = 0
+    parts: list[bytes] = []
+    while True:
+        chunk = await file.read(1024 * 1024)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > limit:
+            raise FileValidationError(
+                f"File exceeds maximum size of {settings.MAX_UPLOAD_SIZE_MB}MB"
+            )
+        parts.append(chunk)
+    return b"".join(parts)
+
+
 @router.post("", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
-def upload_document(
+async def upload_document(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     doc_type: DocumentType = Form(DocumentType.RESUME),
@@ -63,8 +87,8 @@ def upload_document(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Document:
-    data = file.file.read()
     try:
+        data = await _read_capped(file)
         trusted_type = validate_upload(file.filename or "upload", file.content_type or "", data)
     except FileValidationError as exc:
         raise HTTPException(
@@ -110,7 +134,7 @@ async def upload_batch(
     for file in files:
         name = file.filename or "upload"
         try:
-            data = await file.read()
+            data = await _read_capped(file)
             trusted_type = validate_upload(name, file.content_type or "", data)
         except FileValidationError as exc:
             results.append(BatchItemResult(filename=name, accepted=False, error=str(exc)))

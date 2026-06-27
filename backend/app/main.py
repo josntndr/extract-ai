@@ -5,7 +5,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from app.api.v1.router import api_router
 from app.core.config import settings
@@ -13,23 +13,29 @@ from app.core.logging import configure_logging
 from app.middleware.security import RateLimitMiddleware, SecurityHeadersMiddleware
 
 # Built frontend is copied here in the production image (see root Dockerfile).
-STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+STATIC_DIR = (Path(__file__).resolve().parent.parent / "static").resolve()
 
 configure_logging()
+
+# Interactive API docs and the OpenAPI schema are useful in dev but are an
+# information-disclosure surface in production, so disable them there.
+_DOCS_ENABLED = settings.ENVIRONMENT != "production"
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version="0.1.0",
     description="AI-Powered Document Intelligence & OCR Platform",
-    openapi_url=f"{settings.API_V1_PREFIX}/openapi.json",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    openapi_url=f"{settings.API_V1_PREFIX}/openapi.json" if _DOCS_ENABLED else None,
+    docs_url="/docs" if _DOCS_ENABLED else None,
+    redoc_url="/redoc" if _DOCS_ENABLED else None,
 )
 
 # Middleware order: outermost first. Security headers wrap everything; CORS and
-# rate limiting are applied per-request.
+# rate limiting are applied per-request. The limiter is process-global state, so
+# we skip it under tests where it would otherwise bleed across cases.
 app.add_middleware(SecurityHeadersMiddleware)
-app.add_middleware(RateLimitMiddleware)
+if settings.ENVIRONMENT != "test":
+    app.add_middleware(RateLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -55,8 +61,14 @@ def health() -> dict[str, str]:
 if STATIC_DIR.is_dir():
 
     @app.get("/{full_path:path}", include_in_schema=False)
-    def spa(full_path: str) -> FileResponse:
-        candidate = STATIC_DIR / full_path
-        if full_path and candidate.is_file():
-            return FileResponse(candidate)
+    def spa(full_path: str):
+        # Never resolve API paths through the SPA fallback — return a JSON 404
+        # so unmatched API routes don't masquerade as 200/HTML.
+        if full_path.startswith("api/"):
+            return JSONResponse({"detail": "Not Found"}, status_code=404)
+        # Containment check: the resolved target MUST stay inside STATIC_DIR.
+        # Without this, "../" traversal would read arbitrary files (CWE-22).
+        target = (STATIC_DIR / full_path).resolve()
+        if full_path and target.is_file() and target.is_relative_to(STATIC_DIR):
+            return FileResponse(target)
         return FileResponse(STATIC_DIR / "index.html")

@@ -32,6 +32,21 @@ The backend is fully implemented and **tested end-to-end**; the codebase is laid
 so the remaining feature areas (RAG chat, analytics, additional document types) plug
 into the same architecture without rework.
 
+## 🎬 Demo
+
+The whole stack runs from a single Docker image and is **Railway-ready**
+(see [DEPLOY.md](DEPLOY.md)). To try it locally with no API key:
+
+```bash
+docker compose up --build        # then open http://localhost:5173
+# pick "Resume" or "Invoice", drop a PDF/PNG, watch it extract live
+```
+
+> 📷 _Screenshots / demo GIF: drop `docs/dashboard.png` and `docs/extraction.png`
+> into a `docs/` folder and reference them here. A short capture of the
+> upload → live-status → structured-result flow is the single highest-impact
+> addition for reviewers._
+
 ## 🚀 Features
 
 | Area | Status | Notes |
@@ -46,17 +61,17 @@ into the same architecture without rework.
 | Structured-output forcing | ✅ | Constrained to a Pydantic schema on both providers (`messages.parse` / Structured Outputs) |
 | Prompt engineering | ✅ | **zero-shot / few-shot / chain-of-thought** strategies, swappable per request |
 | Prompt-strategy evaluation | ✅ | **Benchmark harness** scoring field-accuracy across strategies on labelled data |
-| Resume extraction | ✅ | Name, contact, skills, education, experience + missing-field detection |
+| Resume extraction | ✅ | Name, contact, skills, education, experience + missing-field detection, custom viewer |
+| Invoice extraction | ✅ | Number, vendor, dates, totals (subtotal/tax/total) + **line-item table**, custom viewer |
 | Background + **batch** processing | ✅ | Single upload returns immediately; `POST /documents/batch` (async) handles many files with **partial-failure** reporting |
-| React dashboard | ✅ | Upload, live status polling, structured result viewer |
-| Security middleware | ✅ | Hardened headers, in-memory rate limiting, CORS allowlist |
-| Test suite + CI | ✅ | 24 Pytest cases (auth, pipeline, providers, tables, batch, eval), Ruff, Docker build, Trivy scan |
-| Invoice / contract / medical / report types | 🛣️ | Schema registry ready — add a Pydantic model to enable |
-| Vision-language extraction (GPT-4V / Claude vision) | 🛣️ | Planned for image-heavy documents |
-| RAG document chat (FAISS + LangChain) | 🛣️ | Planned (architecture documented below) |
-| Cloud OCR / storage (Textract · S3 / GCS) | 🛣️ | Local storage with S3-ready interface today |
+| React dashboard | ✅ | Upload, live status polling, type-aware structured result viewer |
+| Security middleware | ✅ | Hardened headers (CSP/HSTS), per-IP sliding-window rate limiting (stricter on auth), CORS allowlist |
+| Test suite + CI | ✅ | 25 Pytest (auth, pipeline, providers, tables, batch, eval) + 8 Vitest frontend tests, Ruff, Docker build, Trivy scan |
 
-> ✅ = implemented & tested · 🛣️ = on the roadmap, architecture in place
+> Every ✅ row is implemented and covered by automated tests. Planned work is
+> tracked separately under [Future Improvements](#️-future-improvements) — the
+> schema registry, storage interface and persisted text mean those plug into the
+> same architecture without rework.
 
 ## 🏗️ Architecture
 
@@ -156,7 +171,8 @@ cd frontend && npm install && npm run dev
 
 ## 🔌 API Documentation
 
-Interactive OpenAPI docs are served at **`/docs`** (Swagger) and **`/redoc`**.
+Interactive OpenAPI docs are served at **`/docs`** (Swagger) and **`/redoc`** in
+non-production environments (they're disabled in production to reduce surface area).
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -196,8 +212,12 @@ citations and conversation history.
 ## 🧪 Testing & CI/CD
 
 ```bash
-cd backend && pytest            # 13 tests: auth flow, refresh rotation, upload
-                                #           validation, pipeline, ownership isolation
+cd backend  && pytest           # 25 tests: auth + refresh rotation, upload
+                                #           validation, pipeline, ownership
+                                #           isolation, LLM providers, prompt
+                                #           strategies, eval harness, invoice/
+                                #           resume extraction, batch partial-failure
+cd frontend && npm run test     # 8 Vitest tests: formatters + invoice viewer
 ```
 
 GitHub Actions ([ci.yml](.github/workflows/ci.yml)) runs on every push/PR:
@@ -205,11 +225,13 @@ GitHub Actions ([ci.yml](.github/workflows/ci.yml)) runs on every push/PR:
 
 ## 🗺️ Future Improvements
 
-- RAG document chat with streaming + citations (LangChain + FAISS)
-- Invoice / contract / medical / business-report extraction schemas
+- Contract / medical / business-report schemas (resume + invoice already ship; the registry drives the rest)
+- Vision-language extraction (GPT-4V / Claude vision) for image-heavy documents
+- RAG document chat with streaming + citations (LangChain + FAISS) over the persisted text
+- Cloud OCR / storage (Textract · S3 / GCS) behind today's storage interface
 - Admin analytics dashboard (OCR success rate, volume, AI usage)
 - Rich exports (CSV / Excel / Markdown)
-- S3 storage backend + Celery/RQ worker queue for processing at scale
+- Redis-backed rate limiting + Celery/RQ worker queue for multi-replica scale
 
 ## 📜 License
 

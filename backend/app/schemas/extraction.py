@@ -43,9 +43,33 @@ class ResumeData(BaseModel):
     experience: list[Experience] = Field(default_factory=list)
 
 
+# ─── Invoice ───────────────────────────────────────────────────────────────
+class InvoiceLineItem(BaseModel):
+    description: str | None = Field(default=None, description="What the line item is for")
+    quantity: float | None = None
+    unit_price: float | None = Field(default=None, description="Price per unit")
+    amount: float | None = Field(default=None, description="Line total (quantity × unit price)")
+
+
+class InvoiceData(BaseModel):
+    """Structured fields extracted from an invoice or bill."""
+    invoice_number: str | None = Field(default=None, description="Invoice / reference number")
+    issue_date: str | None = Field(default=None, description="Date the invoice was issued")
+    due_date: str | None = None
+    vendor_name: str | None = Field(default=None, description="Company that issued the invoice")
+    vendor_address: str | None = None
+    bill_to: str | None = Field(default=None, description="Customer the invoice is addressed to")
+    currency: str | None = Field(default=None, description="ISO code or symbol, e.g. USD or $")
+    subtotal: float | None = None
+    tax: float | None = Field(default=None, description="Total tax / VAT amount")
+    total: float | None = Field(default=None, description="Grand total amount due")
+    line_items: list[InvoiceLineItem] = Field(default_factory=list)
+
+
 # Registry mapping a document type to its extraction schema.
 EXTRACTION_SCHEMAS: dict[DocumentType, type[BaseModel]] = {
     DocumentType.RESUME: ResumeData,
+    DocumentType.INVOICE: InvoiceData,
 }
 
 

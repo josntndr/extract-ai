@@ -4,8 +4,10 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import computed_field
+from pydantic import computed_field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_WEAK_SECRETS = {"", "change-me", "CHANGE_ME_super_secret_dev_key_do_not_use_in_prod"}
 
 
 class Settings(BaseSettings):
@@ -62,6 +64,17 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE_MB: int = 50
     STORAGE_BACKEND: Literal["local", "s3"] = "local"
     STORAGE_DIR: str = "storage"
+
+    @model_validator(mode="after")
+    def _guard_production_secrets(self) -> Settings:
+        """Refuse to boot a production instance with a default/weak signing key."""
+        if self.ENVIRONMENT == "production" and (
+            self.SECRET_KEY in _WEAK_SECRETS or len(self.SECRET_KEY) < 32
+        ):
+            raise ValueError(
+                "SECRET_KEY must be set to a strong value (>=32 chars) in production"
+            )
+        return self
 
     @computed_field  # type: ignore[prop-decorator]
     @property

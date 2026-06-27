@@ -92,8 +92,29 @@ export interface ResumeData {
   experience: ResumeExperience[]
 }
 
-// Extraction data is doc-type dependent; resume is the fully-typed shape.
-export type ExtractionData = ResumeData | Record<string, unknown>
+export interface InvoiceLineItem {
+  description: string | null
+  quantity: number | null
+  unit_price: number | null
+  amount: number | null
+}
+
+export interface InvoiceData {
+  invoice_number: string | null
+  issue_date: string | null
+  due_date: string | null
+  vendor_name: string | null
+  vendor_address: string | null
+  bill_to: string | null
+  currency: string | null
+  subtotal: number | null
+  tax: number | null
+  total: number | null
+  line_items: InvoiceLineItem[]
+}
+
+// Extraction data is doc-type dependent; resume and invoice are fully-typed.
+export type ExtractionData = ResumeData | InvoiceData | Record<string, unknown>
 
 export interface Extraction {
   id: string

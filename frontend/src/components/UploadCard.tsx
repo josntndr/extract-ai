@@ -7,8 +7,9 @@ import { useUploadDocument } from '@/hooks/useDocuments'
 import { cn, formatBytes } from '@/lib/utils'
 
 const ACCEPT = '.pdf,.png,.jpg,.jpeg'
-// Values must match the backend DocumentType enum. Only "resume" has a
-// fully-typed extraction schema today; the others process text + render raw.
+// Values must match the backend DocumentType enum. "resume" and "invoice" have
+// fully-typed extraction schemas + custom viewers; the others process text and
+// render the structured result generically.
 const DOC_TYPES = [
   { value: 'resume', label: 'Resume' },
   { value: 'invoice', label: 'Invoice' },

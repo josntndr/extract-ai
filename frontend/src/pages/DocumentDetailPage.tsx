@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { AlertTriangle, ArrowLeft, ChevronDown, Loader2, RefreshCw } from 'lucide-react'
 import { PageTransition } from '@/components/PageTransition'
 import { ResumeExtraction } from '@/components/ResumeExtraction'
+import { InvoiceExtraction } from '@/components/InvoiceExtraction'
 import { StatusBadge } from '@/components/StatusBadge'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -124,7 +125,11 @@ export function DocumentDetailPage() {
                 </div>
               </div>
               <div className="p-5">
-                <ResumeExtraction extraction={doc.extraction} />
+                {doc.doc_type === 'invoice' ? (
+                  <InvoiceExtraction extraction={doc.extraction} />
+                ) : (
+                  <ResumeExtraction extraction={doc.extraction} />
+                )}
               </div>
             </div>
           )}

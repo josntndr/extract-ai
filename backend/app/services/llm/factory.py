@@ -1,6 +1,7 @@
 """Selects the configured LLM provider and handles mock mode."""
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from pydantic import BaseModel
@@ -41,6 +42,17 @@ def _mock_extraction(schema: type[BaseModel], text: str, strategy: PromptStrateg
         payload["skills"] = [
             kw for kw in ("python", "fastapi", "react", "sql", "docker") if kw in lowered
         ]
+    # Invoice-shaped heuristics so the mock yields a usable demo result too.
+    if "invoice_number" in fields:
+        m = re.search(r"invoice\s*#?\s*[:\-]?\s*([A-Za-z0-9\-]+)", text, re.IGNORECASE)
+        payload["invoice_number"] = m.group(1) if m else None
+    if "total" in fields:
+        m = re.search(r"total[^0-9]{0,20}([0-9][0-9,]*\.?[0-9]*)", text, re.IGNORECASE)
+        payload["total"] = float(m.group(1).replace(",", "")) if m else None
+    if "vendor_name" in fields:
+        payload["vendor_name"] = next(
+            (ln.strip() for ln in text.splitlines() if ln.strip()), None
+        )
     parsed = schema.model_validate(payload)
     return LLMExtraction(
         data=parsed.model_dump(),

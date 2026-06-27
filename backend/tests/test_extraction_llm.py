@@ -13,6 +13,10 @@ from app.services.prompts import STRATEGIES, get_strategy
 
 FIXTURES = Path(__file__).parent / "fixtures" / "resumes.json"
 RESUME = "John Doe\njohn@example.com\nSkills: Python, FastAPI, Docker"
+INVOICE = (
+    "Acme Supplies Ltd\nInvoice #: INV-2024-0042\n"
+    "Bill to: Globex Corp\nWidget x3 ... 30.00\nTotal: 1,250.00 USD"
+)
 
 
 @pytest.mark.parametrize("provider", ["openai", "anthropic"])
@@ -25,6 +29,18 @@ def test_extraction_runs_for_both_providers_in_mock(provider):
     assert "python" in result.data["skills"]
     assert result.provider.startswith("mock")
     assert result.strategy in STRATEGIES
+
+
+def test_invoice_extraction_returns_typed_invoice_shape():
+    # A second fully-wired document type: confirms the schema registry and the
+    # mock both handle invoices, not just resumes.
+    result = extract_structured(INVOICE, DocumentType.INVOICE)
+    assert {"invoice_number", "total", "vendor_name", "line_items"}.issubset(
+        result.data.keys()
+    )
+    assert result.data["invoice_number"] == "INV-2024-0042"
+    assert result.data["total"] == 1250.0
+    assert result.provider.startswith("mock")
 
 
 @pytest.mark.parametrize("strategy", ["zero_shot", "few_shot", "cot"])
