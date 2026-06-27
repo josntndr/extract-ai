@@ -34,5 +34,5 @@ COPY backend/ .
 # Bake the built frontend in; main.py serves it when ./static exists.
 COPY --from=web /web/dist ./static
 
-# Railway injects $PORT. Run migrations, then serve.
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Resilient boot: retry migrations (DB warmup), then serve on $PORT.
+CMD ["sh", "start.sh"]
