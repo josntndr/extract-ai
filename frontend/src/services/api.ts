@@ -68,9 +68,17 @@ api.interceptors.response.use(
     const original = error.config as RetriableConfig | undefined
     const status = error.response?.status
 
-    const isRefreshCall = original?.url?.includes('/auth/refresh')
+    // Credential endpoints own their own 401s (bad login, expired refresh, etc.)
+    // — never run the token-refresh dance for them, or the real error gets
+    // swallowed and the login form can't show "wrong details / no account".
+    const url = original?.url ?? ''
+    const isCredentialCall =
+      url.includes('/auth/login') ||
+      url.includes('/auth/register') ||
+      url.includes('/auth/refresh') ||
+      url.includes('/auth/logout')
 
-    if (status === 401 && original && !original._retry && !isRefreshCall) {
+    if (status === 401 && original && !original._retry && !isCredentialCall) {
       original._retry = true
       try {
         refreshPromise = refreshPromise ?? performRefresh()
